@@ -7,7 +7,7 @@ AUBoutique is an online marketplace platform with a client-server architecture u
 
 1. **Clone the Repository**:
    ```bash
-   git clone <repository_url>
+   git clone <https://github.com/AppropriateUsername553/AUBoutique.git>
    cd <repository_folder>
    
 2. Start the Server:
