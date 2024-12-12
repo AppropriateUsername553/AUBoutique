@@ -1,0 +1,25 @@
+/* static/css/styles.css */
+
+body {
+    padding-top: 70px; /* Adjust based on navbar height */
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.table th, .table td {
+    vertical-align: middle;
+}
+
+#chatBox p {
+    margin-bottom: 10px;
+}
+
+.modal-dialog {
+    max-width: 500px;
+}
+
+.alert {
+    margin-top: 20px;
+}
