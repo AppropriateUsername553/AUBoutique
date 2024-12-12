@@ -61,9 +61,3 @@
     - **Add Products:** List new products for sale.
     - **Chat:** Communicate with other users in real-time.
     - **Wishlist:** (Optional) Add products to your wishlist.
-
-## Screenshots
-
-*Once available, add screenshots to showcase the application's interface.*
-
-```markdown
