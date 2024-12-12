@@ -1,35 +1,69 @@
-# AUBoutique - Online Marketplace Project
+# AUBoutique
 
-## Overview
-AUBoutique is an online marketplace platform with a client-server architecture using TCP/IP sockets for communication. It allows multiple clients to connect, browse, buy, and sell products, and includes a real-time chat feature.
+**AUBoutique** is an online marketplace designed to facilitate seamless transactions between buyers and sellers. Built with a robust client-server architecture using Flask and SQLite, AUBoutique offers features such as user authentication, product management, real-time chat, and an optional wishlist system.
 
-## Instructions for Running the Project
+## Features
 
-1. **Clone the Repository**:
-   ```bash
-   git clone <https://github.com/AppropriateUsername553/AUBoutique.git>
-   cd <repository_folder>
-   
-2. Start the Server:
+- **User Authentication:** Secure registration and login with hashed passwords.
+- **Product Management:** List, update, purchase, and rate products.
+- **Real-time Chat:** Communicate instantly with other users.
+- **Wishlist (Optional):** Add and manage favorite products for future reference.
 
-Open a terminal in the project directory.
-Run:
-python server.py 5000
+## Technologies Used
 
-The server will initialize a SQLite database and start on port 5000.
+- **Backend:** Flask, SQLite
+- **Frontend:** HTML, CSS (Bootstrap), JavaScript
+- **Version Control:** Git, GitHub
+- **Others:** AJAX for asynchronous operations
 
-3. Launch a Client:
+## Installation
 
-Open a new terminal for each client.
-Run:
-python client.py localhost 5000
-A GUI window will appear for each client instance.
+1. **Clone the Repository:**
+    ```bash
+    git clone https://github.com/AppropriateUsername553/AUBoutique.git
+    cd AUBoutique
+    ```
 
-4. Testing the Project:
+2. **Create a Virtual Environment:**
+    ```bash
+    python3 -m venv venv
+    source venv/bin/activate  # On Windows: venv\Scripts\activate
+    ```
 
-Register and log in to access features like adding products, browsing, purchasing, and using real-time chat between clients.
+3. **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-Dependencies :
-- Python 3.x
-- Tkinter (for the GUI)
-- SQLite3 (for database management)
+4. **Initialize the Database:**
+    ```bash
+    python app.py
+    ```
+    *This will create the `auboutique.db` with all necessary tables.*
+
+## Usage
+
+1. **Run the Application:**
+    ```bash
+    python app.py
+    ```
+    *Access the application at `http://localhost:5000`.*
+
+2. **Register a New User:**
+    - Navigate to the **Register** page.
+    - Fill in the required details and submit.
+
+3. **Login:**
+    - Use your credentials to log in.
+  
+4. **Explore Features:**
+    - **Marketplace:** Browse and search for products.
+    - **Add Products:** List new products for sale.
+    - **Chat:** Communicate with other users in real-time.
+    - **Wishlist:** (Optional) Add products to your wishlist.
+
+## Screenshots
+
+*Once available, add screenshots to showcase the application's interface.*
+
+```markdown
