@@ -1,0 +1,56 @@
+<!-- templates/active_chats.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Active Chats</h2>
+
+{% if chats %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Chat With</th>
+                <th>Last Message</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for chat in chats %}
+                {% if chat.user1 == session['username'] %}
+                    {% set other_user = chat.user2 %}
+                {% else %}
+                    {% set other_user = chat.user1 %}
+                {% endif %}
+                <tr>
+                    <td>{{ other_user }}</td>
+                    <td>
+                        {% set last_msg = None %}
+                        {% for msg in messages %}
+                            {% if msg.chat_id == chat.id %}
+                                {% set last_msg = msg %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if last_msg %}
+                            {{ last_msg.content }}
+                        {% else %}
+                            No messages yet.
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('chat_room', chat_id=chat.id) }}" class="btn btn-success btn-sm">Open Chat</a>
+                        <form action="{{ url_for('end_chat', chat_id=chat.id) }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">End Chat</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>You have no active chats.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<!-- No additional scripts needed -->
+{% endblock %}

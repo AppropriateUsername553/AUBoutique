@@ -1,0 +1,93 @@
+<!-- templates/marketplace.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Marketplace</h2>
+<form method="GET" action="{{ url_for('marketplace') }}" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="search" class="form-control" placeholder="Search products..." value="{{ search }}">
+    </div>
+    <div class="col-md-3">
+        <select name="currency" class="form-select">
+            <option value="USD" {% if currency == 'USD' %}selected{% endif %}>USD</option>
+            <option value="EUR" {% if currency == 'EUR' %}selected{% endif %}>EUR</option>
+            <option value="GBP" {% if currency == 'GBP' %}selected{% endif %}>GBP</option>
+            <option value="JPY" {% if currency == 'JPY' %}selected{% endif %}>JPY</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Search</button>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('marketplace') }}" class="btn btn-secondary w-100">Refresh</a>
+    </div>
+</form>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Seller</th>
+            <th>Quantity</th>
+            <th>Category</th>
+            <th>Avg Rating</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr>
+            <td>{{ product.id }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ product.price }}</td>
+            <td>{{ product.seller }}</td>
+            <td>{{ product.quantity }}</td>
+            <td>{{ product.category }}</td>
+            <td>{{ product.average_rating }}</td>
+            <td>
+                <form action="{{ url_for('buy_product', product_id=product.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-success btn-sm">Buy</button>
+                </form>
+                <form action="{{ url_for('add_to_wishlist', product_id=product.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-warning btn-sm">Add to Wishlist</button>
+                </form>
+                <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#rateModal{{ product.id }}">Rate</button>
+            </td>
+        </tr>
+
+        <!-- Rate Modal -->
+        <div class="modal fade" id="rateModal{{ product.id }}" tabindex="-1" aria-labelledby="rateModalLabel{{ product.id }}" aria-hidden="true">
+          <div class="modal-dialog">
+            <form action="{{ url_for('rate_product', product_id=product.id) }}" method="POST">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="rateModalLabel{{ product.id }}">Rate {{ product.name }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="rating{{ product.id }}" class="form-label">Rating (1-5):</label>
+                            <input type="number" name="rating" id="rating{{ product.id }}" class="form-control" min="1" max="5" required>
+                        </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Submit Rating</button>
+                  </div>
+                </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{{ url_for('view_wishlist') }}" class="btn btn-outline-primary">View Wishlist</a>
+{% endblock %}
+
+{% block scripts %}
+<!-- No additional scripts needed -->
+{% endblock %}

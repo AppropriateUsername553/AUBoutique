@@ -1,0 +1,41 @@
+<!-- templates/chat_requests.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Chat Requests</h2>
+
+{% if requests %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>From</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for req in requests %}
+            <tr>
+                <td>{{ req.from_user }}</td>
+                <td>{{ req.timestamp }}</td>
+                <td>
+                    <form action="{{ url_for('accept_chat', request_id=req.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-success btn-sm">Accept</button>
+                    </form>
+                    <form action="{{ url_for('decline_chat', request_id=req.id) }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Decline</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No pending chat requests.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<!-- No additional scripts needed -->
+{% endblock %}

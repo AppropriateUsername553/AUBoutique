@@ -1,0 +1,274 @@
+<!-- templates/chat.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Peer-to-Peer Chat</h2>
+
+<div class="mb-4">
+    <label for="recipient" class="form-label">Recipient Username:</label>
+    <div class="input-group">
+        <input type="text" id="recipient" class="form-control" placeholder="Enter username to chat" required>
+        <button id="startChat" class="btn btn-primary">Start Chat</button>
+    </div>
+</div>
+
+<div id="chatInterface" style="display:none;">
+    <div id="chatBox" class="border p-3 mb-3" style="height: 300px; overflow-y: scroll;">
+        <!-- Chat messages will appear here -->
+    </div>
+    <form id="chatForm">
+        <div class="input-group">
+            <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." autocomplete="off" required>
+            <button type="submit" class="btn btn-success">Send</button>
+        </div>
+    </form>
+</div>
+
+<!-- Chat Request Modal -->
+<div class="modal fade" id="chatRequestModal" tabindex="-1" aria-labelledby="chatRequestModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+
+        <h5 class="modal-title" id="chatRequestModalLabel">Chat Request</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="chatRequestMessage">User wants to chat with you.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="declineChat" class="btn btn-danger" data-bs-dismiss="modal">Decline</button>
+        <button type="button" id="acceptChat" class="btn btn-success">Accept</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const socket = io();
+
+    let peerConnection = null;
+    let dataChannel = null;
+    let recipientUsername = '';
+    let isInitiator = false;
+
+    const startChatButton = document.getElementById('startChat');
+    const recipientInput = document.getElementById('recipient');
+    const chatInterface = document.getElementById('chatInterface');
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+
+    const chatRequestModal = new bootstrap.Modal(document.getElementById('chatRequestModal'));
+    const chatRequestMessage = document.getElementById('chatRequestMessage');
+    const acceptChatButton = document.getElementById('acceptChat');
+    const declineChatButton = document.getElementById('declineChat');
+
+    const configuration = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            // You can add TURN servers here if needed
+        ]
+    };
+
+    // Initiate Chat
+    startChatButton.addEventListener('click', () => {
+        recipientUsername = recipientInput.value.trim();
+        if (recipientUsername === '') {
+            alert('Please enter a recipient username.');
+            return;
+        }
+
+        // Initialize peer connection and data channel as initiator
+        isInitiator = true;
+        initializePeerConnection();
+
+        // Show chat interface
+        chatInterface.style.display = 'block';
+    });
+
+    // Handle receiving offer
+    socket.on('receive_offer', async (data) => {
+        const senderUsername = data.sender;
+        const offer = data.offer;
+
+        // Prompt user to accept or decline
+        chatRequestMessage.textContent = `${senderUsername} wants to chat with you.`;
+        chatRequestModal.show();
+
+        // Set recipient username for response
+        recipientUsername = senderUsername;
+        isInitiator = false;
+        peerConnection = new RTCPeerConnection(configuration);
+
+        // Handle ICE candidates
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit('send_ice_candidate', {
+                    'target': recipientUsername,
+                    'candidate': event.candidate
+                });
+            }
+        };
+
+        // Handle data channel (for non-initiator)
+        peerConnection.ondatachannel = event => {
+            dataChannel = event.channel;
+            setupDataChannel();
+        };
+
+        // Handle connection state changes
+        peerConnection.onconnectionstatechange = () => {
+            if (peerConnection.connectionState === 'disconnected') {
+                alert('Peer disconnected.');
+                chatInterface.style.display = 'none';
+            }
+        };
+
+        // Set remote description with the received offer
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    });
+
+    // Handle accepting chat
+    acceptChatButton.addEventListener('click', async () => {
+        chatRequestModal.hide();
+
+        // Create answer
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        // Send answer back to the initiator
+        socket.emit('send_answer', {
+            'target': recipientUsername,
+            'answer': answer
+        });
+
+        // Show chat interface
+        chatInterface.style.display = 'block';
+    });
+
+    // Handle declining chat
+    declineChatButton.addEventListener('click', () => {
+        chatRequestModal.hide();
+
+        // Notify sender that chat was declined
+        socket.emit('chat_declined', {
+            'target': recipientUsername
+        });
+    });
+
+    // Handle receiving answer
+    socket.on('receive_answer', async (data) => {
+        const answer = data.answer;
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    });
+
+    // Handle receiving ICE candidates
+    socket.on('receive_ice_candidate', async (data) => {
+        try {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {
+            console.error('Error adding received ice candidate', e);
+        }
+    });
+
+    // Handle chat declined
+    socket.on('chat_declined', (data) => {
+        alert(data.message);
+        // Reset chat interface
+        chatInterface.style.display = 'none';
+        if (isInitiator && peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+    });
+
+    // Handle user offline error
+    socket.on('user_offline_error', (data) => {
+        alert(data.message);
+    });
+
+    function initializePeerConnection() {
+        peerConnection = new RTCPeerConnection(configuration);
+
+        // Handle ICE candidates
+        peerConnection.onicecandidate = event => {
+            if (event.candidate) {
+                socket.emit('send_ice_candidate', {
+                    'target': recipientUsername,
+                    'candidate': event.candidate
+                });
+            }
+        };
+
+        if (isInitiator) {
+            // Create data channel
+            dataChannel = peerConnection.createDataChannel('chat');
+            setupDataChannel();
+
+            // Create offer
+            peerConnection.createOffer()
+                .then(offer => peerConnection.setLocalDescription(offer))
+                .then(() => {
+                    socket.emit('send_offer', {
+                        'target': recipientUsername,
+                        'offer': peerConnection.localDescription
+                    });
+                })
+                .catch(error => console.error('Error creating offer:', error));
+        } else {
+            // Handle data channel if not initiator
+            peerConnection.ondatachannel = event => {
+                dataChannel = event.channel;
+                setupDataChannel();
+            };
+        }
+
+        // Handle connection state changes
+        peerConnection.onconnectionstatechange = () => {
+            if (peerConnection.connectionState === 'disconnected') {
+                alert('Peer disconnected.');
+                chatInterface.style.display = 'none';
+            }
+        };
+    }
+
+    function setupDataChannel() {
+        dataChannel.onopen = () => {
+            console.log('Data channel is open');
+        };
+
+        dataChannel.onmessage = event => {
+            const message = event.data;
+            appendMessage(`${recipientUsername}: ${message}`);
+        };
+    }
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (message === '') return;
+
+        dataChannel.send(message);
+        appendMessage(`You: ${message}`);
+        messageInput.value = '';
+    });
+
+    function appendMessage(message) {
+        const messageElement = document.createElement('p');
+        messageElement.textContent = message;
+        chatBox.appendChild(messageElement);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    // Handle status messages
+    socket.on('status', (data) => {
+        appendMessage(`<em>${data.msg}</em>`);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+<!-- templates/chat_room.html -->
+
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Chat with {{ other_user }}</h2>
+
+<div id="chatBox" class="border p-3 mb-3" style="height: 300px; overflow-y: scroll;">
+    {% for msg in messages %}
+        <p><strong>{{ msg.sender }}:</strong> {{ msg.content }} <small class="text-muted">{{ msg.timestamp }}</small></p>
+    {% endfor %}
+</div>
+
+<form id="chatForm">
+    <div class="input-group">
+        <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." autocomplete="off" required>
+        <button type="submit" class="btn btn-success">Send</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Safely inject Python variables into JavaScript using the tojson filter
+    const chatId = {{ chat_id | tojson }};
+    const otherUser = {{ other_user | tojson }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const chatForm = document.getElementById('chatForm');
+        const messageInput = document.getElementById('messageInput');
+        const chatBox = document.getElementById('chatBox');
+
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = messageInput.value.trim();
+                if (message === '') return;
+
+                // Send the message via AJAX
+                fetch(`/send_message/${chatId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest' // To identify AJAX request
+                    },
+                    body: `message=${encodeURIComponent(message)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        appendMessage('You', message);
+                        messageInput.value = '';
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+
+            // Periodically fetch new messages
+            setInterval(fetchMessages, 2000); // Fetch every 2 seconds
+
+            function fetchMessages() {
+                fetch(`/get_messages/${chatId}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        updateChatBox(data.messages);
+                    } else {
+                        console.error(data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+            function updateChatBox(messages) {
+                chatBox.innerHTML = '';
+                messages.forEach(msg => {
+                    appendMessage(msg.sender, msg.content, msg.timestamp);
+                });
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            function appendMessage(sender, message, timestamp = '') {
+                const p = document.createElement('p');
+                p.innerHTML = `<strong>${sender}:</strong> ${message} ${timestamp ? `<small class="text-muted">${timestamp}</small>` : ''}`;
+                chatBox.appendChild(p);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+    });
+</script>
+{% endblock %}
